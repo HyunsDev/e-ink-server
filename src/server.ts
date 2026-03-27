@@ -5,16 +5,19 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { E213_BUFFER_LENGTH } from "./screen/framebuffer.js";
+import { requireNoteFilePath } from "./screen/note-content.js";
 import { getCurrentScreen, getWrongTokenScreen } from "./screen/current-screen.js";
 
 export interface BuildServerOptions {
   logger?: boolean;
   now?: () => Date;
+  noteFilePath?: string;
   secretToken?: string;
 }
 
 export function buildServer(options: BuildServerOptions = {}): FastifyInstance {
   const secretToken = requireSecretToken(options.secretToken ?? process.env.SECRET_TOKEN);
+  const noteFilePath = requireNoteFilePath(options.noteFilePath ?? process.env.NOTE_FILE);
   const app = Fastify({
     logger: options.logger ?? true,
   });
@@ -25,7 +28,7 @@ export function buildServer(options: BuildServerOptions = {}): FastifyInstance {
       return "wrong_token";
     }
 
-    const snapshot = getCurrentScreen(options.now?.() ?? new Date());
+    const snapshot = getCurrentScreen({ noteFilePath });
 
     reply.header("content-type", "text/plain; charset=utf-8");
     return snapshot.id;
@@ -33,7 +36,7 @@ export function buildServer(options: BuildServerOptions = {}): FastifyInstance {
 
   app.get<{ Querystring: { token?: string } }>("/screen", async (request, reply) => {
     const snapshot = hasValidToken(request.query.token, secretToken)
-      ? getCurrentScreen(options.now?.() ?? new Date())
+      ? getCurrentScreen({ noteFilePath })
       : getWrongTokenScreen();
 
     reply

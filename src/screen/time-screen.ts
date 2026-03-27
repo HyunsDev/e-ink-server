@@ -1,4 +1,7 @@
-import { PRETENDARD_FONT_FAMILY } from "../rendering/fonts.js";
+import {
+  DISPLAY_FONT_FAMILY,
+  DISPLAY_FONT_WEIGHT,
+} from "../rendering/fonts.js";
 import { renderSceneTo1bpp } from "../rendering/render-scene.js";
 import { type ScreenScene } from "../rendering/scene.js";
 import { fitTextToBox } from "../rendering/text-layout.js";
@@ -27,8 +30,8 @@ export function buildTimeScene(date: Date): ScreenScene {
     text,
     maxWidth: E213_WIDTH - 32,
     maxHeight: E213_HEIGHT - 32,
-    fontFamily: PRETENDARD_FONT_FAMILY,
-    fontWeight: 800,
+    fontFamily: DISPLAY_FONT_FAMILY,
+    fontWeight: DISPLAY_FONT_WEIGHT,
     maxFontSize: 88,
     minFontSize: 12,
   });
@@ -44,9 +47,9 @@ export function buildTimeScene(date: Date): ScreenScene {
         text,
         x: E213_WIDTH / 2,
         y: E213_HEIGHT / 2,
-        fontFamily: PRETENDARD_FONT_FAMILY,
+        fontFamily: DISPLAY_FONT_FAMILY,
         fontSize,
-        fontWeight: 800,
+        fontWeight: DISPLAY_FONT_WEIGHT,
         align: "center",
         baseline: "middle",
         color: "black",

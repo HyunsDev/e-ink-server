@@ -1,6 +1,6 @@
 import { createCanvas } from "@napi-rs/canvas";
 
-import { ensurePretendardFontLoaded } from "./fonts.js";
+import { ensureDisplayFontLoaded } from "./fonts.js";
 
 export interface FitTextToBoxOptions {
   text: string;
@@ -16,7 +16,7 @@ const measureCanvas = createCanvas(1, 1);
 const measureContext = measureCanvas.getContext("2d");
 
 export function fitTextToBox(options: FitTextToBoxOptions): number {
-  ensurePretendardFontLoaded();
+  ensureDisplayFontLoaded();
 
   const minFontSize = options.minFontSize ?? 8;
 

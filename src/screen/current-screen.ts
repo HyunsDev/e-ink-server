@@ -1,20 +1,11 @@
 import { createHash } from "node:crypto";
 
-import { renderTimeScreen } from "./time-screen.js";
+import { loadNoteContent, requireNoteFilePath } from "./note-content.js";
+import { renderNoteScreen } from "./note-screen.js";
 import { renderWrongTokenScreen } from "./wrong-token-screen.js";
 
-const minuteKeyFormatter = new Intl.DateTimeFormat("sv-SE", {
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-  timeZone: "Asia/Seoul",
-});
-
 export interface ScreenSnapshot {
-  minuteKey: string;
+  cacheKey: string;
   id: string;
   buffer: Uint8Array;
 }
@@ -22,19 +13,20 @@ export interface ScreenSnapshot {
 let cachedSnapshot: ScreenSnapshot | undefined;
 let cachedWrongTokenSnapshot: ScreenSnapshot | undefined;
 
-export function getCurrentScreen(now = new Date()): ScreenSnapshot {
-  const minuteKey = minuteKeyFormatter.format(now);
+export function getCurrentScreen(options: { noteFilePath?: string } = {}): ScreenSnapshot {
+  const noteFilePath = requireNoteFilePath(options.noteFilePath);
+  const note = loadNoteContent(noteFilePath);
 
-  if (cachedSnapshot?.minuteKey === minuteKey) {
+  if (cachedSnapshot?.cacheKey === note.id) {
     return cachedSnapshot;
   }
 
-  const buffer = renderTimeScreen(now);
-  const id = createHash("sha1").update(buffer).digest("hex");
+  const buffer = renderNoteScreen(note);
+  const renderedId = createHash("sha1").update(buffer).digest("hex");
 
   cachedSnapshot = {
-    minuteKey,
-    id,
+    cacheKey: note.id,
+    id: renderedId,
     buffer,
   };
 
@@ -55,7 +47,7 @@ export function getWrongTokenScreen(): ScreenSnapshot {
   const id = createHash("sha1").update(buffer).digest("hex");
 
   cachedWrongTokenSnapshot = {
-    minuteKey: "wrong-token",
+    cacheKey: "wrong-token",
     id,
     buffer,
   };

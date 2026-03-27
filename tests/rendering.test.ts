@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { renderSceneToGrayscale } from "../src/rendering/canvas-renderer.js";
 import {
-  ensurePretendardFontLoaded,
-  PRETENDARD_FONT_FAMILY,
+  ensureDisplayFontLoaded,
+  DISPLAY_FONT_FAMILY,
 } from "../src/rendering/fonts.js";
 import {
   applyGamma,
@@ -12,21 +12,26 @@ import {
 } from "../src/rendering/mono-rasterizer.js";
 import { renderSceneTo1bpp } from "../src/rendering/render-scene.js";
 import { type ScreenScene } from "../src/rendering/scene.js";
+import {
+  buildNoteTextScene,
+  NOTE_FONT_SIZE,
+  wrapNoteText,
+} from "../src/screen/note-screen.js";
 import { buildTimeScene } from "../src/screen/time-screen.js";
 import { E213_BUFFER_LENGTH, E213_STRIDE, E213_WIDTH } from "../src/screen/framebuffer.js";
 
 describe("vector renderer", () => {
-  it("loads Pretendard from the bundled font asset", () => {
-    expect(ensurePretendardFontLoaded()).toContain("PretendardVariable.ttf");
+  it("loads the bundled display font asset", () => {
+    expect(ensureDisplayFontLoaded()).toContain("DungGeunMo.ttf");
   });
 
   it("throws a clear error when the font file is missing", () => {
     expect(() =>
-      ensurePretendardFontLoaded({
-        fontPath: "/tmp/pretendard-missing.ttf",
+      ensureDisplayFontLoaded({
+        fontPath: "/tmp/display-font-missing.ttf",
         force: true,
       }),
-    ).toThrow("Pretendard font file not found");
+    ).toThrow("Display font file not found");
   });
 
   it("renders English and Korean text scenes to the E213 raw length", () => {
@@ -40,7 +45,7 @@ describe("vector renderer", () => {
         text: "WRONG TOKEN",
         x: 125,
         y: 42,
-        fontFamily: PRETENDARD_FONT_FAMILY,
+          fontFamily: DISPLAY_FONT_FAMILY,
         fontSize: 24,
         fontWeight: 800,
         align: "center",
@@ -60,7 +65,7 @@ describe("vector renderer", () => {
         text: "현재 시간",
         x: 125,
         y: 61,
-        fontFamily: PRETENDARD_FONT_FAMILY,
+          fontFamily: DISPLAY_FONT_FAMILY,
         fontSize: 30,
         fontWeight: 800,
         align: "center",
@@ -108,6 +113,26 @@ describe("vector renderer", () => {
 
     expect(first).toEqual(second);
   });
+
+  it("wraps long note text and builds a note scene with visible lines", () => {
+    const lines = wrapNoteText(
+      "안녕하세요 반갑습니다 이것은 아주 긴 메모입니다 Hello world from note file",
+      120,
+      NOTE_FONT_SIZE,
+    );
+    const scene = buildNoteTextScene(
+      "안녕하세요 반갑습니다 이것은 아주 긴 메모입니다\nHello world from note file",
+    );
+
+    expect(lines.length).toBeGreaterThan(1);
+    expect(scene.nodes.length).toBeGreaterThan(1);
+    expect(scene.nodes.every((node) => node.type === "text")).toBe(true);
+    expect(
+      scene.nodes.every(
+        (node) => node.type === "text" && node.fontSize === NOTE_FONT_SIZE,
+      ),
+    ).toBe(true);
+  });
 });
 
 function buildFixtureScene(): ScreenScene {
@@ -147,7 +172,7 @@ function buildFixtureScene(): ScreenScene {
         text: "현재 시간",
         x: 125,
         y: 42,
-        fontFamily: PRETENDARD_FONT_FAMILY,
+        fontFamily: DISPLAY_FONT_FAMILY,
         fontSize: 24,
         fontWeight: 800,
         align: "center",
@@ -159,7 +184,7 @@ function buildFixtureScene(): ScreenScene {
         text: "21:34",
         x: 125,
         y: 96,
-        fontFamily: PRETENDARD_FONT_FAMILY,
+        fontFamily: DISPLAY_FONT_FAMILY,
         fontSize: 28,
         fontWeight: 800,
         align: "center",

@@ -1,3 +1,7 @@
+import { mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -11,54 +15,89 @@ import {
   E213_WIDTH,
 } from "../src/screen/framebuffer.js";
 import {
-  buildTimeScene,
-  formatTime,
-  renderTimeScreen,
-} from "../src/screen/time-screen.js";
-import { buildWrongTokenScene } from "../src/screen/wrong-token-screen.js";
+  buildNoteFileErrorScene,
+  buildNoteFileEmptyScene,
+  NOTE_LINE_HEIGHT,
+  NOTE_RENDER_LINE_COUNT,
+  buildNoteTextScene,
+  NOTE_FONT_SIZE,
+  NOTE_VISIBLE_LINE_COUNT,
+} from "../src/screen/note-screen.js";
 
-describe("time screen rendering", () => {
-  it("renders deterministic bytes for the same time", () => {
-    const date = new Date("2026-03-27T11:34:56.000Z");
+describe("note screen rendering", () => {
+  const initialNoteText = "안녕하세요\n메모 첫 줄";
 
-    const first = renderTimeScreen(date);
-    const second = renderTimeScreen(date);
+  it("renders deterministic bytes for the same file content", () => {
+    resetScreenCache();
+    const testNote = createTestNoteFile(initialNoteText);
 
-    expect(first).toEqual(second);
-    expect(first).toHaveLength(E213_BUFFER_LENGTH);
-    expect(formatTime(date)).toBe("20:34");
+    const first = getCurrentScreen({ noteFilePath: testNote.filePath });
+    const second = getCurrentScreen({ noteFilePath: testNote.filePath });
+
+    expect(first).toBe(second);
+    expect(first.buffer).toHaveLength(E213_BUFFER_LENGTH);
+    expect(first.id).not.toBe("");
+
+    testNote.cleanup();
   });
 
-  it("changes screen id and payload when the minute changes", () => {
+  it("changes screen id and payload when the file content changes", () => {
     resetScreenCache();
+    const testNote = createTestNoteFile("첫 번째 메모");
 
-    const first = getCurrentScreen(new Date("2026-03-27T11:34:01.000Z"));
-    const second = getCurrentScreen(new Date("2026-03-27T11:35:01.000Z"));
+    const first = getCurrentScreen({ noteFilePath: testNote.filePath });
+    writeFileSync(testNote.filePath, "두 번째 메모", "utf8");
+    const second = getCurrentScreen({ noteFilePath: testNote.filePath });
 
     expect(first.id).not.toBe(second.id);
     expect(first.buffer).not.toEqual(second.buffer);
+
+    testNote.cleanup();
   });
 
-  it("reuses the same snapshot within a minute", () => {
+  it("returns the empty-note state for a blank file", () => {
     resetScreenCache();
+    const testNote = createTestNoteFile("");
 
-    const first = getCurrentScreen(new Date("2026-03-27T11:34:01.000Z"));
-    const second = getCurrentScreen(new Date("2026-03-27T11:34:59.000Z"));
+    const snapshot = getCurrentScreen({ noteFilePath: testNote.filePath });
+    const emptyScene = buildNoteFileEmptyScene();
 
-    expect(second).toBe(first);
+    expect(snapshot.id).not.toBe("");
+    expect(snapshot.buffer).toHaveLength(E213_BUFFER_LENGTH);
+    expect(emptyScene.nodes.every((node) => node.type === "text")).toBe(true);
+
+    testNote.cleanup();
+  });
+
+  it("returns the error state when the note file is missing", () => {
+    resetScreenCache();
+    const testNote = createTestNoteFile("삭제될 메모");
+    unlinkSync(testNote.filePath);
+
+    const snapshot = getCurrentScreen({ noteFilePath: testNote.filePath });
+    const errorScene = buildNoteFileErrorScene();
+
+    expect(snapshot.id).not.toBe("");
+    expect(snapshot.buffer).toHaveLength(E213_BUFFER_LENGTH);
+    expect(errorScene.nodes.every((node) => node.type === "text")).toBe(true);
+
+    testNote.cleanup();
   });
 
   it("keeps the wrong-token screen stable and distinct", () => {
     resetScreenCache();
+    const testNote = createTestNoteFile(initialNoteText);
 
     const first = getWrongTokenScreen();
     const second = getWrongTokenScreen();
-    const normal = getCurrentScreen(new Date("2026-03-27T11:34:01.000Z"));
+    const normal = getCurrentScreen({ noteFilePath: testNote.filePath });
 
     expect(first).toBe(second);
     expect(first.buffer).toHaveLength(E213_BUFFER_LENGTH);
     expect(first.buffer).not.toEqual(normal.buffer);
     expect(first.id).not.toBe(normal.id);
+
+    testNote.cleanup();
   });
 
   it("renders the wrong-token screen as a large two-line message", () => {
@@ -68,17 +107,54 @@ describe("time screen rendering", () => {
     const upperHalfInk = countInk(snapshot.buffer, 0, 60);
     const lowerHalfInk = countInk(snapshot.buffer, 61, 121);
 
-    expect(upperHalfInk).toBeGreaterThan(2800);
-    expect(lowerHalfInk).toBeGreaterThan(2800);
-    expect(upperHalfInk + lowerHalfInk).toBeGreaterThan(6800);
+    expect(upperHalfInk).toBeGreaterThan(1900);
+    expect(lowerHalfInk).toBeGreaterThan(1900);
+    expect(upperHalfInk + lowerHalfInk).toBeGreaterThan(4100);
   });
 
-  it("builds time and wrong-token scenes with text nodes", () => {
-    const timeScene = buildTimeScene(new Date("2026-03-27T11:34:56.000Z"));
-    const wrongTokenScene = buildWrongTokenScene();
+  it("reflects ongoing NOTE_FILE text updates in successive snapshots", () => {
+    resetScreenCache();
+    const firstText = "메모 A";
+    const secondText = "메모 B\n두 번째 줄";
+    const testNote = createTestNoteFile(firstText);
 
-    expect(timeScene.nodes.some((node) => node.type === "text")).toBe(true);
-    expect(wrongTokenScene.nodes.filter((node) => node.type === "text")).toHaveLength(2);
+    const first = getCurrentScreen({ noteFilePath: testNote.filePath });
+    writeFileSync(testNote.filePath, secondText, "utf8");
+    const second = getCurrentScreen({ noteFilePath: testNote.filePath });
+
+    expect(first.id).not.toBe("");
+    expect(second.id).not.toBe("");
+    expect(second.id).not.toBe(first.id);
+    expect(second.buffer).not.toEqual(first.buffer);
+
+    testNote.cleanup();
+  });
+
+  it("renders NOTE_FILE body text at a fixed 16px size", () => {
+    const scene = buildNoteTextScene("첫 줄\n둘째 줄");
+
+    expect(scene.nodes.length).toBeGreaterThan(0);
+    expect(
+      scene.nodes.every(
+        (node) => node.type === "text" && node.fontSize === NOTE_FONT_SIZE,
+      ),
+    ).toBe(true);
+  });
+
+  it("renders one extra overflowing note line beyond the fully visible count", () => {
+    const scene = buildNoteTextScene("1\n2\n3\n4\n5\n6\n7\n8");
+
+    expect(NOTE_VISIBLE_LINE_COUNT).toBe(6);
+    expect(NOTE_RENDER_LINE_COUNT).toBe(7);
+    expect(scene.nodes).toHaveLength(NOTE_RENDER_LINE_COUNT);
+    expect(
+      scene.nodes.every(
+        (node, index) =>
+          node.type === "text" &&
+          node.fontSize === NOTE_FONT_SIZE &&
+          node.y === 6 + index * NOTE_LINE_HEIGHT,
+      ),
+    ).toBe(true);
   });
 });
 
@@ -98,4 +174,17 @@ function countInk(buffer: Uint8Array, startY: number, endY: number): number {
   }
 
   return total;
+}
+
+function createTestNoteFile(content: string): { filePath: string; cleanup: () => void } {
+  const directory = mkdtempSync(join(tmpdir(), "eink-note-screen-"));
+  const filePath = join(directory, "NOTE.md");
+  writeFileSync(filePath, content, "utf8");
+
+  return {
+    filePath,
+    cleanup: () => {
+      rmSync(directory, { recursive: true, force: true });
+    },
+  };
 }

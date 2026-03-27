@@ -1,6 +1,6 @@
 import { createCanvas, type SKRSContext2D } from "@napi-rs/canvas";
 
-import { ensurePretendardFontLoaded, PRETENDARD_FONT_FAMILY } from "./fonts.js";
+import { ensureDisplayFontLoaded, DISPLAY_FONT_FAMILY } from "./fonts.js";
 import {
   type GrayColor,
   type GroupNode,
@@ -20,7 +20,7 @@ export interface GrayscaleImage {
 }
 
 export function renderSceneToGrayscale(scene: ScreenScene): GrayscaleImage {
-  ensurePretendardFontLoaded();
+  ensureDisplayFontLoaded();
 
   const canvas = createCanvas(
     scene.width * SUPERSAMPLE_SCALE,
@@ -111,7 +111,7 @@ function drawText(context: SKRSContext2D, node: TextNode): void {
   context.fillStyle = toCanvasColor(node.color ?? "black");
   context.font = buildCanvasFont(
     node.fontSize,
-    node.fontFamily ?? PRETENDARD_FONT_FAMILY,
+    node.fontFamily ?? DISPLAY_FONT_FAMILY,
     node.fontWeight,
   );
   context.textAlign = node.align ?? "left";
