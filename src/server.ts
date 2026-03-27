@@ -52,7 +52,7 @@ export function buildServer(options: BuildServerOptions = {}): FastifyInstance {
 }
 
 async function start(): Promise<void> {
-  const port = Number(process.env.PORT ?? "3000");
+  const port = requirePort(process.env.PORT);
   const host = process.env.HOST ?? "0.0.0.0";
   let app: FastifyInstance | undefined;
 
@@ -83,6 +83,16 @@ function requireSecretToken(secretToken: string | undefined): string {
   }
 
   return secretToken;
+}
+
+function requirePort(portValue: string | undefined): number {
+  const parsedPort = Number(portValue ?? "3000");
+
+  if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
+    throw new Error("PORT must be an integer between 1 and 65535.");
+  }
+
+  return parsedPort;
 }
 
 function hasValidToken(receivedToken: string | undefined, secretToken: string): boolean {
