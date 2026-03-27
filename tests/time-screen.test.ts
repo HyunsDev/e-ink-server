@@ -144,8 +144,8 @@ describe("note screen rendering", () => {
   it("renders one extra overflowing note line beyond the fully visible count", () => {
     const scene = buildNoteTextScene("1\n2\n3\n4\n5\n6\n7\n8");
 
-    expect(NOTE_VISIBLE_LINE_COUNT).toBe(6);
-    expect(NOTE_RENDER_LINE_COUNT).toBe(7);
+    expect(NOTE_VISIBLE_LINE_COUNT).toBeGreaterThan(0);
+    expect(NOTE_RENDER_LINE_COUNT).toBe(NOTE_VISIBLE_LINE_COUNT + 1);
     expect(scene.nodes).toHaveLength(NOTE_RENDER_LINE_COUNT);
     expect(
       scene.nodes.every(

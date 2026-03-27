@@ -29,6 +29,8 @@ export interface TextNode extends BaseNode {
   align?: CanvasTextAlign;
   baseline?: CanvasTextBaseline;
   color?: GrayColor;
+  strokeColor?: GrayColor;
+  strokeWidth?: number;
 }
 
 export interface RectNode extends BaseShapeNode {

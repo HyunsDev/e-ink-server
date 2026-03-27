@@ -7,7 +7,10 @@ import { type ScreenScene } from "../rendering/scene.js";
 import { fitTextToBox } from "../rendering/text-layout.js";
 import { E213_HEIGHT, E213_WIDTH } from "./framebuffer.js";
 
-const WRONG_TOKEN_LINES = ["WRONG", "TOKEN"] as const;
+const WRONG_TOKEN_LINES = [
+  "토큰이 잘못되었어요",
+  "토큰을 확인해주세요",
+] as const;
 
 export function renderWrongTokenScreen(): Uint8Array {
   return renderSceneTo1bpp(buildWrongTokenScene());
@@ -22,8 +25,8 @@ export function buildWrongTokenScene(): ScreenScene {
         maxHeight: 44,
         fontFamily: DISPLAY_FONT_FAMILY,
         fontWeight: DISPLAY_FONT_WEIGHT,
-        maxFontSize: 52,
-        minFontSize: 12,
+        maxFontSize: 16,
+        minFontSize: 16,
       }),
     ),
   );

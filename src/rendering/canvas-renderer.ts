@@ -116,6 +116,19 @@ function drawText(context: SKRSContext2D, node: TextNode): void {
   );
   context.textAlign = node.align ?? "left";
   context.textBaseline = node.baseline ?? "alphabetic";
+  context.lineJoin = "round";
+  context.lineCap = "round";
+
+  if (node.strokeColor !== undefined && (node.strokeWidth ?? 0) > 0) {
+    context.strokeStyle = toCanvasColor(node.strokeColor);
+    context.lineWidth = node.strokeWidth ?? 0;
+
+    if (node.maxWidth) {
+      context.strokeText(node.text, node.x, node.y, node.maxWidth);
+    } else {
+      context.strokeText(node.text, node.x, node.y);
+    }
+  }
 
   if (node.maxWidth) {
     context.fillText(node.text, node.x, node.y, node.maxWidth);

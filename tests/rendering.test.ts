@@ -15,6 +15,9 @@ import { type ScreenScene } from "../src/rendering/scene.js";
 import {
   buildNoteTextScene,
   NOTE_FONT_SIZE,
+  NOTE_INVERTED_EXTRA_Y,
+  NOTE_INVERTED_STROKE_WIDTH,
+  wrapNoteSegments,
   wrapNoteText,
 } from "../src/screen/note-screen.js";
 import { buildTimeScene } from "../src/screen/time-screen.js";
@@ -132,6 +135,45 @@ describe("vector renderer", () => {
         (node) => node.type === "text" && node.fontSize === NOTE_FONT_SIZE,
       ),
     ).toBe(true);
+  });
+
+  it("renders <text> spans as inverted note segments", () => {
+    const wrapped = wrapNoteSegments("앞<강조>뒤", 200, NOTE_FONT_SIZE);
+    const scene = buildNoteTextScene("앞<강조>뒤");
+    const invertedTextNode = scene.nodes.find(
+      (node) => node.type === "text" && node.color === "white",
+    );
+    const invertedBackgroundNode = scene.nodes.find(
+      (node) => node.type === "rect" && node.fill === "black",
+    );
+
+    expect(wrapped).toEqual([
+      [
+        { text: "앞", inverted: false },
+        { text: "강조", inverted: true },
+        { text: "뒤", inverted: false },
+      ],
+    ]);
+    expect(invertedTextNode).toMatchObject({
+      type: "text",
+      text: "강조",
+      color: "white",
+      fontSize: NOTE_FONT_SIZE,
+      strokeColor: "white",
+      strokeWidth: NOTE_INVERTED_STROKE_WIDTH,
+    });
+    expect(invertedBackgroundNode).toMatchObject({
+      type: "rect",
+      fill: "black",
+    });
+    expect(invertedBackgroundNode).toMatchObject({
+      x: invertedTextNode?.type === "text" ? invertedTextNode.x : undefined,
+      y:
+        invertedTextNode?.type === "text"
+          ? invertedTextNode.y - NOTE_INVERTED_EXTRA_Y
+          : undefined,
+      height: NOTE_FONT_SIZE + NOTE_INVERTED_EXTRA_Y * 2,
+    });
   });
 });
 
