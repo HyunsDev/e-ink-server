@@ -18,9 +18,9 @@ import {
 } from "./note-content.js";
 
 const NOTE_PADDING_X = 0;
-const NOTE_PADDING_Y = 4;
+const NOTE_PADDING_Y = 5.5;
 export const NOTE_FONT_SIZE = 16;
-export const NOTE_LINE_GAP = 5;
+export const NOTE_LINE_GAP = 1;
 export const NOTE_LINE_HEIGHT = NOTE_FONT_SIZE + NOTE_LINE_GAP;
 export const NOTE_VISIBLE_LINE_COUNT = Math.max(
   1,
@@ -29,7 +29,8 @@ export const NOTE_VISIBLE_LINE_COUNT = Math.max(
   ),
 );
 export const NOTE_RENDER_LINE_COUNT = NOTE_VISIBLE_LINE_COUNT + 1;
-export const NOTE_INVERTED_EXTRA_Y = NOTE_LINE_GAP / 2;
+export const NOTE_INVERTED_TOP_EXTRA_Y = Math.ceil(NOTE_LINE_GAP / 2);
+export const NOTE_INVERTED_BOTTOM_EXTRA_Y = Math.floor(NOTE_LINE_GAP / 2);
 export const NOTE_INVERTED_STROKE_WIDTH = 0.75;
 
 export interface NoteInlineSegment {
@@ -185,9 +186,12 @@ function buildNoteLineNodes(line: NoteInlineSegment[], y: number): SceneNode[] {
       nodes.push({
         type: "rect",
         x,
-        y: y - NOTE_INVERTED_EXTRA_Y,
+        y: y - NOTE_INVERTED_TOP_EXTRA_Y,
         width: Math.ceil(width),
-        height: NOTE_FONT_SIZE + NOTE_INVERTED_EXTRA_Y * 2,
+        height:
+          NOTE_FONT_SIZE +
+          NOTE_INVERTED_TOP_EXTRA_Y +
+          NOTE_INVERTED_BOTTOM_EXTRA_Y,
         fill: "black",
       } satisfies RectNode);
     }

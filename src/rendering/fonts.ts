@@ -21,7 +21,10 @@ export function ensureDisplayFontLoaded(
     throw new Error(`Display font file not found: ${fontPath}`);
   }
 
-  const registered = GlobalFonts.registerFromPath(fontPath, DISPLAY_FONT_FAMILY);
+  const registered = GlobalFonts.registerFromPath(
+    fontPath,
+    DISPLAY_FONT_FAMILY,
+  );
   if (!registered) {
     throw new Error(`Failed to register display font from path: ${fontPath}`);
   }

@@ -15,8 +15,9 @@ import { type ScreenScene } from "../src/rendering/scene.js";
 import {
   buildNoteTextScene,
   NOTE_FONT_SIZE,
-  NOTE_INVERTED_EXTRA_Y,
+  NOTE_INVERTED_BOTTOM_EXTRA_Y,
   NOTE_INVERTED_STROKE_WIDTH,
+  NOTE_INVERTED_TOP_EXTRA_Y,
   wrapNoteSegments,
   wrapNoteText,
 } from "../src/screen/note-screen.js";
@@ -170,9 +171,12 @@ describe("vector renderer", () => {
       x: invertedTextNode?.type === "text" ? invertedTextNode.x : undefined,
       y:
         invertedTextNode?.type === "text"
-          ? invertedTextNode.y - NOTE_INVERTED_EXTRA_Y
+          ? invertedTextNode.y - NOTE_INVERTED_TOP_EXTRA_Y
           : undefined,
-      height: NOTE_FONT_SIZE + NOTE_INVERTED_EXTRA_Y * 2,
+      height:
+        NOTE_FONT_SIZE +
+        NOTE_INVERTED_TOP_EXTRA_Y +
+        NOTE_INVERTED_BOTTOM_EXTRA_Y,
     });
   });
 });
