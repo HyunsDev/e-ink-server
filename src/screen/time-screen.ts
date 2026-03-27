@@ -1,17 +1,10 @@
-import {
-  E213_HEIGHT,
-  E213_WIDTH,
-  Framebuffer1bpp,
-} from "./framebuffer.js";
-import {
-  drawScaledText,
-  FONT_HEIGHT,
-  measureTextColumns,
-} from "./font.js";
+import { PRETENDARD_FONT_FAMILY } from "../rendering/fonts.js";
+import { renderSceneTo1bpp } from "../rendering/render-scene.js";
+import { type ScreenScene } from "../rendering/scene.js";
+import { fitTextToBox } from "../rendering/text-layout.js";
+import { E213_HEIGHT, E213_WIDTH } from "./framebuffer.js";
 
 const TIME_ZONE = "Asia/Seoul";
-const HORIZONTAL_MARGIN = 10;
-const VERTICAL_MARGIN = 10;
 
 const timeFormatter = new Intl.DateTimeFormat("en-GB", {
   hour: "2-digit",
@@ -21,29 +14,43 @@ const timeFormatter = new Intl.DateTimeFormat("en-GB", {
 });
 
 export function renderTimeScreen(date: Date): Uint8Array {
-  const framebuffer = new Framebuffer1bpp();
-  const timeText = formatTime(date);
-  const totalColumns = measureTextColumns(timeText);
-
-  const scale = Math.max(
-    1,
-    Math.floor(
-      Math.min(
-        (E213_WIDTH - HORIZONTAL_MARGIN * 2) / totalColumns,
-        (E213_HEIGHT - VERTICAL_MARGIN * 2) / FONT_HEIGHT,
-      ),
-    ),
-  );
-
-  const renderedWidth = totalColumns * scale;
-  const renderedHeight = FONT_HEIGHT * scale;
-  const offsetX = Math.floor((E213_WIDTH - renderedWidth) / 2);
-  const offsetY = Math.floor((E213_HEIGHT - renderedHeight) / 2);
-
-  drawScaledText(framebuffer, timeText, offsetX, offsetY, scale);
-  return framebuffer.toUint8Array();
+  return renderSceneTo1bpp(buildTimeScene(date));
 }
 
 export function formatTime(date: Date): string {
   return timeFormatter.format(date);
+}
+
+export function buildTimeScene(date: Date): ScreenScene {
+  const text = formatTime(date);
+  const fittedFontSize = fitTextToBox({
+    text,
+    maxWidth: E213_WIDTH - 32,
+    maxHeight: E213_HEIGHT - 32,
+    fontFamily: PRETENDARD_FONT_FAMILY,
+    fontWeight: 800,
+    maxFontSize: 88,
+    minFontSize: 12,
+  });
+  const fontSize = Math.max(12, fittedFontSize - 2);
+
+  return {
+    width: E213_WIDTH,
+    height: E213_HEIGHT,
+    background: "white",
+    nodes: [
+      {
+        type: "text",
+        text,
+        x: E213_WIDTH / 2,
+        y: E213_HEIGHT / 2,
+        fontFamily: PRETENDARD_FONT_FAMILY,
+        fontSize,
+        fontWeight: 800,
+        align: "center",
+        baseline: "middle",
+        color: "black",
+      },
+    ],
+  };
 }

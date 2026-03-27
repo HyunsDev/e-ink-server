@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { renderTimeScreen } from "./time-screen.js";
+import { renderWrongTokenScreen } from "./wrong-token-screen.js";
 
 const minuteKeyFormatter = new Intl.DateTimeFormat("sv-SE", {
   year: "numeric",
@@ -19,6 +20,7 @@ export interface ScreenSnapshot {
 }
 
 let cachedSnapshot: ScreenSnapshot | undefined;
+let cachedWrongTokenSnapshot: ScreenSnapshot | undefined;
 
 export function getCurrentScreen(now = new Date()): ScreenSnapshot {
   const minuteKey = minuteKeyFormatter.format(now);
@@ -41,4 +43,22 @@ export function getCurrentScreen(now = new Date()): ScreenSnapshot {
 
 export function resetScreenCache(): void {
   cachedSnapshot = undefined;
+  cachedWrongTokenSnapshot = undefined;
+}
+
+export function getWrongTokenScreen(): ScreenSnapshot {
+  if (cachedWrongTokenSnapshot) {
+    return cachedWrongTokenSnapshot;
+  }
+
+  const buffer = renderWrongTokenScreen();
+  const id = createHash("sha1").update(buffer).digest("hex");
+
+  cachedWrongTokenSnapshot = {
+    minuteKey: "wrong-token",
+    id,
+    buffer,
+  };
+
+  return cachedWrongTokenSnapshot;
 }
