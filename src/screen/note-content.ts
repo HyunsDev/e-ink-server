@@ -22,7 +22,8 @@ export function loadNoteContent(noteFilePath: string): NoteContent {
     }
 
     return createNoteState("note", normalized);
-  } catch {
+  } catch (error) {
+    console.error("Error loading note content:", error);
     return createNoteState("error", NOTE_FILE_ERROR_TEXT);
   }
 }
