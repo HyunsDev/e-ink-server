@@ -29,8 +29,8 @@ export const NOTE_VISIBLE_LINE_COUNT = Math.max(
   ),
 );
 export const NOTE_RENDER_LINE_COUNT = NOTE_VISIBLE_LINE_COUNT + 1;
-export const NOTE_INVERTED_TOP_EXTRA_Y = Math.ceil(NOTE_LINE_GAP / 2);
-export const NOTE_INVERTED_BOTTOM_EXTRA_Y = Math.floor(NOTE_LINE_GAP / 2);
+export const NOTE_INVERTED_TOP_EXTRA_Y = 2;
+export const NOTE_INVERTED_BOTTOM_EXTRA_Y = -2;
 export const NOTE_INVERTED_STROKE_WIDTH = 0.75;
 
 export interface NoteInlineSegment {
