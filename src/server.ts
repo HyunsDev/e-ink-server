@@ -29,26 +29,34 @@ export function buildServer(options: BuildServerOptions = {}): FastifyInstance {
     logger: options.logger ?? true,
   });
 
-  app.get<{ Querystring: { token?: string } }>(
+  app.get<{ Querystring: Record<string, string | string[] | undefined> }>(
     "/current-id",
     async (request, reply) => {
-      if (!hasValidToken(request.query.token, secretToken)) {
+      if (!hasValidToken(getFirstQueryValue(request.query.token), secretToken)) {
         reply.header("content-type", "text/plain; charset=utf-8");
         return "wrong_token";
       }
 
-      const snapshot = getCurrentScreen({ noteFilePath });
+      const snapshot = getCurrentScreen({
+        noteFilePath,
+        now: getRequestTime(options.now),
+        templateVariables: extractTemplateVariables(request.query),
+      });
 
       reply.header("content-type", "text/plain; charset=utf-8");
       return snapshot.id;
     },
   );
 
-  app.get<{ Querystring: { token?: string } }>(
+  app.get<{ Querystring: Record<string, string | string[] | undefined> }>(
     "/screen",
     async (request, reply) => {
-      const snapshot = hasValidToken(request.query.token, secretToken)
-        ? getCurrentScreen({ noteFilePath })
+      const snapshot = hasValidToken(getFirstQueryValue(request.query.token), secretToken)
+        ? getCurrentScreen({
+            noteFilePath,
+            now: getRequestTime(options.now),
+            templateVariables: extractTemplateVariables(request.query),
+          })
         : getWrongTokenScreen();
 
       reply
@@ -118,4 +126,43 @@ function hasValidToken(
   secretToken: string,
 ): boolean {
   return receivedToken === secretToken;
+}
+
+function getRequestTime(nowProvider: BuildServerOptions["now"]): Date {
+  return nowProvider?.() ?? new Date();
+}
+
+function extractTemplateVariables(
+  query: Record<string, string | string[] | undefined>,
+): Record<string, string> {
+  const variables: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(query)) {
+    if (key === "token") {
+      continue;
+    }
+
+    if (typeof value === "string") {
+      variables[key] = value;
+      continue;
+    }
+
+    if (Array.isArray(value) && typeof value[0] === "string") {
+      variables[key] = value[0];
+    }
+  }
+
+  return variables;
+}
+
+function getFirstQueryValue(value: string | string[] | undefined): string | undefined {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return typeof value[0] === "string" ? value[0] : undefined;
+  }
+
+  return undefined;
 }

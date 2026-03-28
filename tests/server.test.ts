@@ -115,6 +115,81 @@ describe("HTTP API", () => {
     testNote.cleanup();
   });
 
+  it("applies custom request variables to current-id and screen", async () => {
+    const now = new Date("2026-03-28T21:07:09+09:00");
+    const testNote = createTestNoteFile("배터리 {&battery}%");
+    const app = buildServer({
+      logger: false,
+      noteFilePath: testNote.filePath,
+      secretToken: "secret",
+      now: () => now,
+    });
+
+    const firstIdResponse = await app.inject({
+      method: "GET",
+      url: "/current-id?token=secret&battery=82",
+    });
+    const firstScreenResponse = await app.inject({
+      method: "GET",
+      url: "/screen?token=secret&battery=82",
+    });
+    const secondIdResponse = await app.inject({
+      method: "GET",
+      url: "/current-id?token=secret&battery=64",
+    });
+    const secondScreenResponse = await app.inject({
+      method: "GET",
+      url: "/screen?token=secret&battery=64",
+    });
+
+    expect(firstIdResponse.body).not.toBe(secondIdResponse.body);
+    expect(firstScreenResponse.rawPayload).not.toEqual(secondScreenResponse.rawPayload);
+    expect(firstScreenResponse.headers.etag).toBe(`"${firstIdResponse.body}"`);
+    expect(secondScreenResponse.headers.etag).toBe(`"${secondIdResponse.body}"`);
+
+    await app.close();
+    testNote.cleanup();
+  });
+
+  it("updates current-id and screen when time variables change", async () => {
+    const testNote = createTestNoteFile("{HH}:{mm}:{ss}");
+    let currentNow = new Date("2026-03-28T21:07:09+09:00");
+    const app = buildServer({
+      logger: false,
+      noteFilePath: testNote.filePath,
+      secretToken: "secret",
+      now: () => currentNow,
+    });
+
+    const firstIdResponse = await app.inject({
+      method: "GET",
+      url: "/current-id?token=secret",
+    });
+    const firstScreenResponse = await app.inject({
+      method: "GET",
+      url: "/screen?token=secret",
+    });
+
+    currentNow = new Date("2026-03-28T21:07:10+09:00");
+
+    const secondIdResponse = await app.inject({
+      method: "GET",
+      url: "/current-id?token=secret",
+    });
+    const secondScreenResponse = await app.inject({
+      method: "GET",
+      url: "/screen?token=secret",
+    });
+
+    expect(firstIdResponse.body).not.toBe(secondIdResponse.body);
+    expect(firstScreenResponse.rawPayload).not.toEqual(secondScreenResponse.rawPayload);
+    expect(firstScreenResponse.headers.etag).toBe(`"${firstIdResponse.body}"`);
+    expect(secondScreenResponse.headers.etag).toBe(`"${secondIdResponse.body}"`);
+
+    await app.close();
+    testNote.cleanup();
+  });
+
   it("returns wrong_token when the token is invalid", async () => {
     const testNote = createTestNoteFile(initialNoteText);
     const app = buildServer({
