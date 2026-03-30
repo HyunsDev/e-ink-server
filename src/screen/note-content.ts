@@ -71,7 +71,11 @@ export function resolveNoteTemplateText(
       (fullMatch, token: keyof ReturnType<typeof createDateVariableMap>) =>
         replacements[token] ?? fullMatch,
     )
-    .replace(/\{&([^{}]+)\}/g, (_fullMatch, name: string) => customVariables[name] ?? "");
+    .replace(
+      /\{(?:(\d+):)?&([^{}:]+?)(?::(\d+))?\}/g,
+      (_fullMatch, leftWidth: string | undefined, name: string, rightWidth: string | undefined) =>
+        resolveCustomVariableValue(customVariables[name] ?? "", leftWidth, rightWidth),
+    );
 }
 
 export function createDateVariableMap(now: Date): Record<string, string> {
@@ -113,4 +117,20 @@ function createNoteState(kind: NoteContentKind, text: string): NoteContent {
 
 function pad2(value: number): string {
   return String(value).padStart(2, "0");
+}
+
+function resolveCustomVariableValue(
+  value: string,
+  leftWidth: string | undefined,
+  rightWidth: string | undefined,
+): string {
+  if (leftWidth) {
+    return value.padStart(Number(leftWidth), " ");
+  }
+
+  if (rightWidth) {
+    return value.padEnd(Number(rightWidth), " ");
+  }
+
+  return value;
 }

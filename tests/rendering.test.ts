@@ -179,6 +179,10 @@ describe("vector renderer", () => {
         NOTE_INVERTED_BOTTOM_EXTRA_Y,
     });
   });
+
+  it("preserves trailing spaces for right-padded variables at line end", () => {
+    expect(wrapNoteText("3  ", 200, NOTE_FONT_SIZE)).toEqual(["3  "]);
+  });
 });
 
 function buildFixtureScene(): ScreenScene {

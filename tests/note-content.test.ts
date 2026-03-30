@@ -52,6 +52,27 @@ describe("note template resolution", () => {
     ).toBe("배터리 82% / 온도 18C / 누락 []");
   });
 
+  it("supports padleft and padright custom variables", () => {
+    const now = new Date("2026-03-28T21:07:09+09:00");
+
+    expect(
+      resolveNoteTemplateText("<{3:&battery}>", {
+        now,
+        customVariables: {
+          battery: "3",
+        },
+      }),
+    ).toBe("<  3>");
+    expect(
+      resolveNoteTemplateText("<{&battery:3}>", {
+        now,
+        customVariables: {
+          battery: "3",
+        },
+      }),
+    ).toBe("<3  >");
+  });
+
   it("resolves variables before note highlighting is interpreted", () => {
     const now = new Date("2026-03-28T21:07:09+09:00");
 

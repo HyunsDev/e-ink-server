@@ -150,7 +150,7 @@ function wrapSingleLine(
     const candidateWidth = measureSegmentsWidth(candidate, fontSize);
 
     if (current.length > 0 && candidateWidth > maxWidth) {
-      lines.push(trimTrailingSpaces(current));
+      lines.push(current);
       current =
         char.char === " " ? [] : [{ text: char.char, inverted: char.inverted }];
       continue;
@@ -160,7 +160,7 @@ function wrapSingleLine(
   }
 
   if (current.length > 0 || lines.length === 0) {
-    lines.push(trimTrailingSpaces(current));
+    lines.push(current);
   }
 
   return lines;
@@ -291,29 +291,6 @@ function appendCharToSegments(
   }
 
   return [...segments, { text: char, inverted }];
-}
-
-function trimTrailingSpaces(
-  segments: NoteInlineSegment[],
-): NoteInlineSegment[] {
-  const trimmed = segments.map((segment) => ({ ...segment }));
-
-  while (trimmed.length > 0) {
-    const last = trimmed[trimmed.length - 1];
-    if (!last) {
-      break;
-    }
-
-    const updatedText = last.text.replace(/\s+$/u, "");
-    if (updatedText.length > 0) {
-      last.text = updatedText;
-      break;
-    }
-
-    trimmed.pop();
-  }
-
-  return trimmed;
 }
 
 function measureSegmentsWidth(
